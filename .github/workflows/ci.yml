@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: 检查脚本与文档
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 检查 shell 语法
+        run: bash -n ghdl.sh && echo "ghdl.sh 语法正常"
+
+      - name: 确认关键文档存在
+        run: |
+          test -f README.md || { echo "缺少 README.md"; exit 1; }
+          test -f docs/usage.md || { echo "缺少 docs/usage.md"; exit 1; }
+          echo "文档齐全"
+
+      - name: 输出运行环境信息
+        run: |
+          echo "仓库: $GITHUB_REPOSITORY"
+          echo "分支: $GITHUB_REF_NAME"
+          echo "提交: $GITHUB_SHA"
+          echo "触发者: $GITHUB_ACTOR"
+          echo "系统: $(uname -a)"
