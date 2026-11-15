@@ -1,0 +1,44 @@
+name: 每日仓库快照
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    name: 生成并提交快照
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 生成快照文件
+        run: |
+          mkdir -p reports
+          {
+            echo "# 仓库快照"
+            echo ""
+            echo "由 GitHub Actions 自动生成，每次运行覆盖。"
+            echo ""
+            echo "- 生成时间（UTC）：$(date -u '+%Y-%m-%d %H:%M:%S')"
+            echo "- 提交总数：$(git rev-list --count HEAD)"
+            echo "- 文件总数：$(git ls-files | wc -l | tr -d ' ')"
+            echo "- 最新提交：$(git log -1 --pretty='%h %s')"
+          } > reports/snapshot.md
+          cat reports/snapshot.md
+
+      - name: 有变化则提交
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/snapshot.md
+          if git diff --staged --quiet; then
+            echo "内容无变化，跳过提交"
+          else
+            git commit -m "chore: 更新仓库快照 [skip ci]"
+            git push
+          fi
